@@ -1,2 +1,19 @@
+.ctanstack.wrangler
+node_modules
 .claude
+.venv
+__pycache__
+/run_all.sh
 .playwright-mcp
+/run_all_linux.sh
+/run_all_windows.ps1
+
+# Model checkpoints (too large for GitHub, use Colab to regenerate)
+model_checkpoint/
+*.safetensors
+
+# OS files
+.DS_Store
+
+# Data archives (source files are extracted)
+*.zip
