@@ -1,0 +1,69 @@
+version: "3.9"
+
+services:
+  llm:
+    image: ghcr.io/ggml-org/llama.cpp:server
+    container_name: llm-server
+    platform: linux/arm64
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./models:/models:ro
+    command:
+      - "--host"
+      - "0.0.0.0"
+      - "--port"
+      - "8080"
+      - "-m"
+      - "/models/qwen2.5-0.5b-instruct-q4_k_m.gguf"
+      - "--alias"
+      - "qwen2.5-0.5b-instruct"
+      - "--ctx-size"
+      - "4096"
+      - "--threads"
+      - "4"
+    networks:
+      - bot_net
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8080/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  fastapi:
+    build:
+      context: .
+      dockerfile: Dockerfile.fastapi
+    container_name: bot-backend
+    environment:
+      LLM_BASE_URL: http://llm:8080/v1
+      LLM_MODEL: qwen2.5-0.5b-instruct
+      CLASSIFIER_MODEL_PATH: /app/model_checkpoint/best
+    ports:
+      - "8000:8000"
+    volumes:
+      - ../hw_8/model_checkpoint/best:/app/model_checkpoint/best:ro
+    networks:
+      - bot_net
+    depends_on:
+      llm:
+        condition: service_healthy
+
+  streamlit:
+    build:
+      context: .
+      dockerfile: Dockerfile.streamlit
+    container_name: chat-ui
+    environment:
+      API_BASE: http://fastapi:8000
+    ports:
+      - "8501:8501"
+    networks:
+      - bot_net
+    depends_on:
+      - fastapi
+
+networks:
+  bot_net:
+    driver: bridge

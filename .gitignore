@@ -17,3 +17,6 @@ model_checkpoint/
 
 # Data archives (source files are extracted)
 *.zip
+
+# LLM models (downloaded separately)
+hw_9/models/
