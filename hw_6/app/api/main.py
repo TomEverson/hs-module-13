@@ -8,6 +8,11 @@ from uuid import uuid4
 app = FastAPI()
 
 
+@app.get("/health")
+def health():
+    return {"status": "ok"}
+
+
 @app.post("/get_message", response_model=GetMessageResponseModel)
 async def get_message(body: GetMessageRequestModel):
     """
