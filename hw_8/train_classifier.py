@@ -1,6 +1,6 @@
+import argparse
 import json
 import os
-import argparse
 from pathlib import Path
 
 import numpy as np
@@ -17,12 +17,11 @@ from sklearn.metrics import (
 from transformers import (
     AutoModelForSequenceClassification,
     AutoTokenizer,
+    EarlyStoppingCallback,
     Trainer,
     TrainingArguments,
-    EarlyStoppingCallback,
 )
 from transformers.trainer_utils import EvalPrediction
-
 
 BASE_MODEL = "distilbert-base-uncased"
 OUTPUT_DIR = "model_checkpoint"

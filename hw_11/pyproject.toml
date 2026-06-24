@@ -1,0 +1,19 @@
+[project]
+name = "hw11-lora-mlflow"
+version = "0.1.0"
+description = "HW-11: LoRA fine-tuning with MLflow experiment tracking"
+requires-python = ">=3.10"
+dependencies = [
+    "mlflow>=2.13.0",
+    "peft>=0.11.0",
+    "torch>=2.0.0",
+    "transformers>=4.40.0",
+    "datasets>=2.19.0",
+    "scikit-learn>=1.4.0",
+    "pandas>=2.0.0",
+    "numpy>=1.26.0",
+    "accelerate>=0.30.0",
+]
+
+[tool.uv]
+package = false
