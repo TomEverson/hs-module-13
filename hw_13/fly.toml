@@ -12,6 +12,9 @@ primary_region = "ams"
   OLLAMA_MODEL        = "smollm2:135m"
   # Store Ollama models on the persistent volume so they survive restarts
   OLLAMA_MODELS       = "/data/ollama_models"
+  # Cache HuggingFace models on the persistent volume to avoid re-downloading on restart
+  HF_HOME             = "/data/hf_cache"
+  TRANSFORMERS_CACHE  = "/data/hf_cache"
 
 [http_service]
   internal_port = 8000
