@@ -1,0 +1,108 @@
+services:
+
+  # ── 1. MLflow ──────────────────────────────────────────────────────────────
+  mlflow:
+    image: ghcr.io/mlflow/mlflow:v2.16.2
+    command: >
+      mlflow server
+        --host 0.0.0.0
+        --port 5000
+        --backend-store-uri sqlite:////mlflow/mlflow.db
+        --artifacts-destination /mlflow/artifacts
+        --serve-artifacts
+    ports:
+      - "5000:5000"
+    volumes:
+      - mlflow_data:/mlflow
+    healthcheck:
+      test: ["CMD", "python", "-c",
+             "import urllib.request; urllib.request.urlopen('http://localhost:5000/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+    networks:
+      - tombot
+
+  # ── 2. Classifier ──────────────────────────────────────────────────────────
+  classifier:
+    build: ./classifier
+    ports:
+      - "8001:8000"
+    environment:
+      - MLFLOW_TRACKING_URI=http://mlflow:5000
+      - MODEL_PATH=/app/model
+    volumes:
+      - ../hw_8/model_checkpoint/best:/app/model:ro
+    depends_on:
+      mlflow:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c",
+             "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+      start_period: 30s
+    networks:
+      - tombot
+
+  # ── 3. LLM (Ollama) ────────────────────────────────────────────────────────
+  llm:
+    build: ./llm
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    environment:
+      - OLLAMA_MODEL=${OLLAMA_MODEL:-smollm2:135m}
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:11434/api/tags"]
+      interval: 15s
+      timeout: 10s
+      retries: 20
+      start_period: 120s
+    networks:
+      - tombot
+
+  # ── 4. Orchestrator ────────────────────────────────────────────────────────
+  orchestrator:
+    build: ./orchestrator
+    ports:
+      - "8000:8000"
+    environment:
+      - CLASSIFIER_URL=http://classifier:8000
+      - LLM_URL=http://llm:11434
+      - OLLAMA_MODEL=${OLLAMA_MODEL:-smollm2:135m}
+      - PREPROMPT_PATH=/app/preprompt.txt
+    volumes:
+      - ./ui/preprompt.txt:/app/preprompt.txt:ro
+      - orchestrator_data:/data
+    depends_on:
+      classifier:
+        condition: service_healthy
+      llm:
+        condition: service_healthy
+    networks:
+      - tombot
+
+  # ── 5. Streamlit UI ────────────────────────────────────────────────────────
+  ui:
+    build: ./ui
+    ports:
+      - "8501:8501"
+    environment:
+      - API_BASE=http://orchestrator:8000
+    depends_on:
+      - orchestrator
+    networks:
+      - tombot
+
+volumes:
+  mlflow_data:
+  ollama_data:
+  orchestrator_data:
+
+networks:
+  tombot:
+    driver: bridge
